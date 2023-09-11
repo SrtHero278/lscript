@@ -1,0 +1,2 @@
+--library linc_luajit
+# This allows me to code in vsc while not getting constant errors.

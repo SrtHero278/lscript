@@ -1,0 +1,12 @@
+{
+    "name": "lscript",
+    "url" : "https://github.com/SrtHero278/lscript",
+    "license": "MIT",
+    "tags": ["haxe", "lua", "luajit"],
+    "description": "A haxelib using linc_luajit to create object oriented lua! (Original Codebase by YoshiCrafter29)",
+    "version": "0.1.0",
+    "classPath": "",
+    "releasenote": "",
+    "contributors": ["SrtHero278"],
+    "dependencies": {}
+}
