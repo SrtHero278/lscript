@@ -9,17 +9,17 @@ import llua.State;
 import llua.Macro.*;
 
 class CustomConvert {
-    /**
-     * Converts a lua variable to haxe. Used for lua function returns.
-     * @param stackPos The position of the lua variable.
+	/**
+	 * Converts a lua variable to haxe. Used for lua function returns.
+	 * @param stackPos The position of the lua variable.
 	 * @param inTable Default to false. This var is included because functions break in tables.
-     */
-     public static function fromLua(stackPos:Int):Dynamic {
+	 */
+	 public static function fromLua(stackPos:Int):Dynamic {
 		var ret:Any = null;
 		var curLua = LScript.currentLua; // Mainly for the local function support but makes some lines shorter and nicer.
 		var luaState = curLua.luaState;
 
-        switch(Lua.type(luaState, stackPos)) {
+		switch(Lua.type(luaState, stackPos)) {
 			case Lua.LUA_TNIL:
 				ret = null;
 			case Lua.LUA_TBOOLEAN:
@@ -75,9 +75,9 @@ class CustomConvert {
 
 		//This is to check if the object has a special field and converts it back if so.
 		if (ret is Dynamic && Reflect.hasField(ret, "__special_id")) //Special Var.
-            return curLua.specialVars[Reflect.field(ret, "__special_id")];
-        return ret;
-    }
+			return curLua.specialVars[Reflect.field(ret, "__special_id")];
+		return ret;
+	}
 
 	/**
 	 * Converts any value into a lua variable.
@@ -114,7 +114,7 @@ class CustomConvert {
 				Lua.pushinteger(luaState, location);
 				Lua.settable(luaState, tableIndex);
 
-                LuaL.getmetatable(luaState, "__scriptMetatable");
+				LuaL.getmetatable(luaState, "__scriptMetatable");
 				Lua.setmetatable(luaState, tableIndex);
 			case Type.ValueType.TObject:
 				var location = curLua.specialVars.indexOf(val);
@@ -156,7 +156,7 @@ class CustomConvert {
 				Lua.pushinteger(luaState, location);
 				Lua.settable(luaState, tableIndex);
 
-                LuaL.getmetatable(luaState, "__scriptMetatable");
+				LuaL.getmetatable(luaState, "__scriptMetatable");
 				Lua.setmetatable(luaState, tableIndex);
 
 				return false;

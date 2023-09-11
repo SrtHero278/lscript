@@ -19,7 +19,7 @@ using StringTools;
 class LScript {
 	public static var currentLua:LScript = null;
 
-    public var luaState:State;
+	public var luaState:State;
 	public var tracePrefix:String = "testScript: ";
 	public var parent(get, set):Dynamic;
 	public var script(get, null):Dynamic;
@@ -30,9 +30,9 @@ class LScript {
 	 */
 	public var specialVars:Array<Dynamic> = [];
 	
-    public function new(scriptCode:String) {
-        luaState = LuaL.newstate();
-        LuaL.openlibs(luaState);
+	public function new(scriptCode:String) {
+		luaState = LuaL.newstate();
+		LuaL.openlibs(luaState);
 		Lua.register_hxtrace_func(Callable.fromStaticFunction(scriptTrace));
 		Lua.register_hxtrace_lib(luaState);
 
@@ -46,16 +46,16 @@ class LScript {
 		Lua.setglobal(luaState, "__scriptMetatable");
 
 		Lua.pushstring(luaState, '__index'); //This is a function in the metatable that is called when you to get a var that doesn't exist.
-        Lua.pushcfunction(luaState, MetatableFunctions.callIndex);
-        Lua.settable(luaState, metatableIndex);
-        
-        Lua.pushstring(luaState, '__newindex'); //This is a function in the metatable that is called when you to set a var that was originally null.
-        Lua.pushcfunction(luaState, MetatableFunctions.callNewIndex);
-        Lua.settable(luaState, metatableIndex);
-        
-        Lua.pushstring(luaState, '__call'); //This is a function in the metatable that is called when you call a function inside the table.
-        Lua.pushcfunction(luaState, MetatableFunctions.callMetatableCall);
-        Lua.settable(luaState, metatableIndex);
+		Lua.pushcfunction(luaState, MetatableFunctions.callIndex);
+		Lua.settable(luaState, metatableIndex);
+		
+		Lua.pushstring(luaState, '__newindex'); //This is a function in the metatable that is called when you to set a var that was originally null.
+		Lua.pushcfunction(luaState, MetatableFunctions.callNewIndex);
+		Lua.settable(luaState, metatableIndex);
+		
+		Lua.pushstring(luaState, '__call'); //This is a function in the metatable that is called when you call a function inside the table.
+		Lua.pushcfunction(luaState, MetatableFunctions.callMetatableCall);
+		Lua.settable(luaState, metatableIndex);
 
 		Lua.setmetatable(luaState, tableIndex);
 
@@ -64,8 +64,8 @@ class LScript {
 		Lua.pushvalue(luaState, metatableIndex);
 
 		Lua.pushstring(luaState, '__index'); //This is a function in the metatable that is called when you to get a var that doesn't exist.
-        Lua.pushcfunction(luaState, MetatableFunctions.callEnumIndex);
-        Lua.settable(luaState, enumMetatableIndex);
+		Lua.pushcfunction(luaState, MetatableFunctions.callEnumIndex);
+		Lua.settable(luaState, enumMetatableIndex);
 
 		specialVars[0] = {"import": ClassWorkarounds.importClass}
 
@@ -90,14 +90,14 @@ class LScript {
 				return __scriptMetatable.__index(script.parent, name)
 			end
 		})';
-    }
+	}
 
-    public function execute() {
+	public function execute() {
 		var lastLua:LScript = currentLua;
 		currentLua = this;
 
-        if (LuaL.dostring(luaState, toParse) != 0)
-            parseError(Lua.tostring(luaState, -1));
+		if (LuaL.dostring(luaState, toParse) != 0)
+			parseError(Lua.tostring(luaState, -1));
 
 		currentLua = lastLua;
 	}
@@ -106,7 +106,7 @@ class LScript {
 		trace("Lua code was unable to be parsed.\n" + err);
 	}
 
-    static inline function scriptTrace(s:String):Int {
+	static inline function scriptTrace(s:String):Int {
 		trace(currentLua.tracePrefix + CustomConvert.fromLua(-2));
 		return 0;
 	}
@@ -115,10 +115,10 @@ class LScript {
 		var toReturn:Dynamic = null;
 
 		var lastLua:LScript = currentLua;
-        currentLua = this;
+		currentLua = this;
 
 		Lua.getglobal(luaState, name);
-        toReturn = CustomConvert.fromLua(-1);
+		toReturn = CustomConvert.fromLua(-1);
 		Lua.pop(luaState, 1);
 
 		currentLua = lastLua;
@@ -126,46 +126,46 @@ class LScript {
 		return toReturn;
 	}
 
-    public function setVar(name:String, newValue:Dynamic) {
-		var lastLua:LScript = currentLua;
-        currentLua = this;
-
-        CustomConvert.toLua(newValue);
-		Lua.setglobal(luaState, name);
-		
-		currentLua = lastLua;
-    }
-
-    public function callFunc(name:String, ?params:Array<Dynamic>):Dynamic {
+	public function setVar(name:String, newValue:Dynamic) {
 		var lastLua:LScript = currentLua;
 		currentLua = this;
 
-        Lua.settop(luaState, 0);
-        Lua.getglobal(luaState, name); //Finds the function from the script.
+		CustomConvert.toLua(newValue);
+		Lua.setglobal(luaState, name);
+		
+		currentLua = lastLua;
+	}
 
-        if (!Lua.isfunction(luaState, -1))
-            return null;
+	public function callFunc(name:String, ?params:Array<Dynamic>):Dynamic {
+		var lastLua:LScript = currentLua;
+		currentLua = this;
+
+		Lua.settop(luaState, 0);
+		Lua.getglobal(luaState, name); //Finds the function from the script.
+
+		if (!Lua.isfunction(luaState, -1))
+			return null;
 
 		//Pushes the parameters of the script.
 		var nparams:Int = 0;
 		if (params != null && params.length > 0) {
 			nparams = params.length;
-       		for (val in params)
-            	CustomConvert.toLua(val);
+	   		for (val in params)
+				CustomConvert.toLua(val);
 		}
-        
+		
 		//Calls the function of the script. If it does not return 0, will trace what went wrong.
-        if (Lua.pcall(luaState, nparams, 1, 0) != 0) {
+		if (Lua.pcall(luaState, nparams, 1, 0) != 0) {
 			trace(tracePrefix + 'Function("$name") Error: ${Lua.tostring(luaState, -1)}');
-            return null;
-        }
+			return null;
+		}
 
 		//Grabs and returns the result of the function.
-        var v = CustomConvert.fromLua(Lua.gettop(luaState));
-        Lua.settop(luaState, 0);
+		var v = CustomConvert.fromLua(Lua.gettop(luaState));
+		Lua.settop(luaState, 0);
 		currentLua = lastLua;
-        return v;
-    }
+		return v;
+	}
 
 	inline function get_script() {
 		return specialVars[0];
