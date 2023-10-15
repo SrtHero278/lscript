@@ -107,7 +107,7 @@ class LScript {
 	}
 
 	static inline function scriptTrace(s:String):Int {
-		trace(currentLua.tracePrefix + CustomConvert.fromLua(-2));
+		Sys.println(currentLua.tracePrefix + CustomConvert.fromLua(-2));
 		return 0;
 	}
 
@@ -156,7 +156,7 @@ class LScript {
 		
 		//Calls the function of the script. If it does not return 0, will trace what went wrong.
 		if (Lua.pcall(luaState, nparams, 1, 0) != 0) {
-			trace(tracePrefix + 'Function("$name") Error: ${Lua.tostring(luaState, -1)}');
+			Sys.println(tracePrefix + 'Function("$name") Error: ${Lua.tostring(luaState, -1)}');
 			return null;
 		}
 

@@ -100,7 +100,7 @@ class ClassWorkarounds {
 			LuaL.getmetatable(luaState, "__enumMetatable");
 			Lua.setmetatable(luaState, tableIndex);
 		} else {
-			trace('Lua Import Error: Unable to find class from path "$path".');
+			Sys.println('${LScript.currentLua.tracePrefix}Lua Import Error: Unable to find class from path "$path".');
 		}
 	}
 }

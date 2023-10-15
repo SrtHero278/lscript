@@ -55,7 +55,7 @@ class CustomConvert {
 						
 						//Calls the function of the script. If it does not return 0, will trace what went wrong.
 						if (Lua.pcall(luaState, nparams, 1, 0) != 0) {
-							trace(curLua.tracePrefix + 'Function(LOCAL) Error: ${Lua.tostring(luaState, -1)}');
+							Sys.println('${curLua.tracePrefix}Function(LOCAL) Error: ${Lua.tostring(luaState, -1)}');
 							return null;
 						}
 
@@ -70,7 +70,7 @@ class CustomConvert {
 				}
 			case idk:
 				ret = null;
-				trace('Return value not supported: ${Std.string(idk)} - $stackPos');
+				Sys.println('${curLua.tracePrefix}Return value not supported: ${Std.string(idk)} - $stackPos');
 		}
 
 		//This is to check if the object has a special field and converts it back if so.
