@@ -1,5 +1,6 @@
 package lscript;
 
+import cpp.RawPointer;
 import lscript.LScript;
 import lscript.ClassWorkarounds;
 
@@ -14,10 +15,10 @@ class CustomConvert {
 	 * @param stackPos The position of the lua variable.
 	 * @param inTable Default to false. This var is included because functions break in tables.
 	 */
-	 public static function fromLua(stackPos:Int):Dynamic {
+	 public static function fromLua(stackPos:Int, ?specialIndex:RawPointer<Int>, ?parentIndex:RawPointer<Int>, ?includeIndexes:Bool = false):Dynamic {
 		var ret:Any = null;
-		var curLua = LScript.currentLua; // Mainly for the local function support but makes some lines shorter and nicer.
-		var luaState = curLua.luaState;
+		final curLua = LScript.currentLua; // Mainly for the local function support but makes some lines shorter and nicer.
+		final luaState = curLua.luaState;
 
 		switch(Lua.type(luaState, stackPos)) {
 			case Lua.LUA_TNIL:
@@ -33,10 +34,10 @@ class CustomConvert {
 			case Lua.LUA_TFUNCTION:
 				if (Lua.tocfunction(luaState, stackPos) != ClassWorkarounds.workaroundCallable) {
 					Lua.pushvalue(luaState, stackPos);
-					var ref = LuaL.ref(luaState, Lua.LUA_REGISTRYINDEX);
+					final ref = LuaL.ref(luaState, Lua.LUA_REGISTRYINDEX);
 
 					function callLocalLuaFunc(params:Array<Dynamic>) {
-						var lastLua:LScript = LScript.currentLua;
+						final lastLua:LScript = LScript.currentLua;
 						LScript.currentLua = curLua;
 
 						Lua.settop(luaState, 0);
@@ -60,7 +61,7 @@ class CustomConvert {
 						}
 
 						//Grabs and returns the result of the function.
-						var v = CustomConvert.fromLua(Lua.gettop(luaState));
+							final v = CustomConvert.fromLua(Lua.gettop(luaState));
 						Lua.settop(luaState, 0);
 						LScript.currentLua = lastLua;
 						return v;
@@ -74,9 +75,39 @@ class CustomConvert {
 		}
 
 		//This is to check if the object has a special field and converts it back if so.
-		if (ret is Dynamic && Reflect.hasField(ret, "__special_id")) //Special Var.
-			return curLua.specialVars[Reflect.field(ret, "__special_id")];
+		if (ret is Dynamic && Reflect.hasField(ret, "__special_id")) {//Special Var.
+			final specID = Reflect.field(ret, "__special_id");
+			if (includeIndexes) {
+				specialIndex[0] = specID;
+				parentIndex[0] = Reflect.field(ret, "__parent_id");
+			}
+			return curLua.specialVars[specID];
+		}
 		return ret;
+	}
+
+	public static function addToMetatable(val:Dynamic, parentIndex:Int):Int {
+		final lua = LScript.currentLua;
+		final luaState = lua.luaState;
+		final location = (lua.avalibableIndexes.length > 0) ? lua.avalibableIndexes.shift() : lua.nextIndex;
+		lua.nextIndex += untyped __cpp__("{0}", lua.nextIndex == location);
+		lua.specialVars.set(location, val); 
+
+		Lua.newtable(luaState);
+		final tableIndex = Lua.gettop(luaState); //The variable position of the table. Used for paring the metatable with this table and attaching variables.
+
+		Lua.pushstring(luaState, '__parent_id'); //This is a helper var in the table that is used by the conversion functions to grab the parent of the special var.
+		Lua.pushinteger(luaState, parentIndex);
+		Lua.settable(luaState, tableIndex);
+
+		Lua.pushstring(luaState, '__special_id'); //This is a helper var in the table that is used by the conversion functions to detect a special var.
+		Lua.pushinteger(luaState, location);
+		Lua.settable(luaState, tableIndex);
+
+		LuaL.getmetatable(luaState, "__scriptMetatable");
+		Lua.setmetatable(luaState, tableIndex);
+
+		return tableIndex;
 	}
 
 	/**
@@ -84,7 +115,7 @@ class CustomConvert {
 	 * Automatically calls `Lua.push[var-type]` so all you need to do is call `Lua.setglobal` or `Lua.settable`.
 	 * @param val                The value to convert.
 	 */
-	public static function toLua(val:Any) {
+	public static function toLua(val:Any, ?parentIndex:Int = -1) {
 		var varType = Type.typeof(val);
 		var curLua = LScript.currentLua;
 		var luaState = curLua.luaState;
@@ -101,68 +132,19 @@ class CustomConvert {
 			case Type.ValueType.TClass(String):
 				Lua.pushstring(luaState, cast(val, String));
 			case Type.ValueType.TClass(Array):
-				var location = curLua.specialVars.indexOf(val);
-				if (location < 0) {
-					location = curLua.specialVars.length;
-					curLua.specialVars.push(val);
-				}
-
-				Lua.newtable(luaState);
-				var tableIndex = Lua.gettop(luaState); //The variable position of the table. Used for paring the metatable with this table and attaching variables.
-
-				Lua.pushstring(luaState, '__special_id'); //This is a helper var in the table that is used by the conversion functions to detect a special var.
-				Lua.pushinteger(luaState, location);
-				Lua.settable(luaState, tableIndex);
-
-				LuaL.getmetatable(luaState, "__scriptMetatable");
-				Lua.setmetatable(luaState, tableIndex);
+				addToMetatable(val, parentIndex);
 			case Type.ValueType.TObject:
-				var location = curLua.specialVars.indexOf(val);
-				if (location < 0) {
-					location = curLua.specialVars.length;
-					curLua.specialVars.push(val);
-				}
-	
-				Lua.newtable(luaState);
-				var tableIndex = Lua.gettop(luaState); //The variable position of the table. Used for paring the metatable with this table and attaching variables.
-	
-				Lua.pushstring(luaState, '__special_id'); //This is a helper var in the table that is used by the conversion functions to detect a special var.
-				Lua.pushinteger(luaState, location);
-				Lua.settable(luaState, tableIndex);
+				final tableIndex = addToMetatable(val, parentIndex);
 
 				//Idk why it thinks static classes are objects but ok.
-				var className:String = Type.getClassName(val); //I should find a better way to check if its a class.
-				if (className != null) {
+				if (val is Class) {
 					Lua.pushstring(luaState, "new"); //This implements the work around function to create the class instance.
 					Lua.pushcfunction(luaState, ClassWorkarounds.workaroundCallable);
 					Lua.rawset(luaState, tableIndex);
 				}
-	
-				LuaL.getmetatable(luaState, "__scriptMetatable");
-				Lua.setmetatable(luaState, tableIndex);
-
-				return true;
 			default: //Didn't fit any of the var types. Assuming it's an instance/pointer, creating table, and attaching table to metatable.
-				var location = curLua.specialVars.indexOf(val);
-				if (location < 0) {
-					location = curLua.specialVars.length;
-					curLua.specialVars.push(val);
-				}
-
-				Lua.newtable(luaState);
-				var tableIndex = Lua.gettop(luaState); //The variable position of the table. Used for paring the metatable with this table and attaching variables.
-
-				Lua.pushstring(luaState, '__special_id'); //This is a helper var in the table that is used by the conversion functions to detect a special var.
-				Lua.pushinteger(luaState, location);
-				Lua.settable(luaState, tableIndex);
-
-				LuaL.getmetatable(luaState, "__scriptMetatable");
-				Lua.setmetatable(luaState, tableIndex);
-
-				return false;
+				addToMetatable(val, parentIndex);
 		}
-
-		return true;
 	}
 
 	public static function toHaxeObj(i:Int):Any {

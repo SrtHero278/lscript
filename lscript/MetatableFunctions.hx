@@ -7,6 +7,7 @@ import llua.Lua;
 import llua.LuaL;
 import llua.State;
 
+import cpp.RawPointer;
 import cpp.Callable;
 
 class MetatableFunctions {
@@ -25,6 +26,10 @@ class MetatableFunctions {
 	/**
 	 * The metatable function that is called when lua tries to get an enum value. (TODO: Fix enum values with parameters.)
 	 */
+	public static final callGarbageCollect = Callable.fromStaticFunction(_callGarbageCollect);
+	/**
+	 * The metatable function that is called when lua tries to get an enum value. (TODO: Fix enum values with parameters.)
+	 */
 	public static final callEnumIndex = Callable.fromStaticFunction(_callEnumIndex);
 
 	//These functions are here because Callable seems like it wants an int return and whines when you do a non static function.
@@ -37,23 +42,30 @@ class MetatableFunctions {
 	static function _callMetatableCall(state:StatePointer):Int {
 		return metatableFunc(LScript.currentLua.luaState, 2);
 	}
-	static function _callEnumIndex(state:StatePointer):Int {
+	static function _callGarbageCollect(state:StatePointer):Int {
 		return metatableFunc(LScript.currentLua.luaState, 3);
+	}
+	static function _callEnumIndex(state:StatePointer):Int {
+		return metatableFunc(LScript.currentLua.luaState, 4);
 	}
 
 	static function metatableFunc(state:State, funcNum:Int) {
-		var functions:Array<Dynamic> = [index, newIndex, metatableCall, enumIndex];
+		final functions:Array<Dynamic> = [index, newIndex, metatableCall, garbageCollect, enumIndex];
 
 		//Making the params for the function.
-		var nparams:Int = Lua.gettop(state);
-		var params:Array<Dynamic> = [for(i in 0...nparams) CustomConvert.fromLua(-nparams + i)];
-		
-		var funcParams = [for (i in 2...params.length) params[i]];
-		params.splice(2, params.length);
-		params.push(funcParams);
+		final nparams:Int = Lua.gettop(state);
+		final specialIndex:Int = -1;
+		final parentIndex:Int = -1;
+		final params:Array<Dynamic> = [for(i in 0...nparams) CustomConvert.fromLua(-nparams + i, RawPointer.addressOf(specialIndex), RawPointer.addressOf(parentIndex), i == 0)];
 
-		if (funcNum == 1)
-			params[2] = params[2][0];
+		if (funcNum == 2) {
+			if (params[1] != LScript.currentLua.specialVars[parentIndex])
+				params.insert(1, LScript.currentLua.specialVars[parentIndex]);
+
+			final funcParams = [for (i in 2...params.length) params[i]];
+			params.splice(2, params.length);
+			params.push(funcParams);
+		}
 
 		//Calling the function. If it catches something, will send a lua error of what went wrong.
 		var returned:Dynamic = null;
@@ -67,7 +79,7 @@ class MetatableFunctions {
 		Lua.settop(state, 0);
 
 		if (returned != null) {
-			CustomConvert.toLua(returned);
+			CustomConvert.toLua(returned, funcNum < 2 ? specialIndex : -1);
 			return 1;
 		}
 		return 0;
@@ -97,14 +109,18 @@ class MetatableFunctions {
 		return null;
 	}
 	public static function metatableCall(func:Dynamic, object:Dynamic, ?params:Array<Any>) {
-		var funcParams = (params != null && params.length > 0) ? params : [];
+		final funcParams = (params != null && params.length > 0) ? params : [];
 
 		if (object != null && func != null && Reflect.isFunction(func))
 			return Reflect.callMethod(object, func, funcParams);
 		return null;
 	}
+	public static function garbageCollect(index:Int) {
+		LScript.currentLua.avalibableIndexes.push(index);
+		LScript.currentLua.specialVars.remove(index);
+	}
 	public static function enumIndex(object:Enum<Dynamic>, value:String, ?params:Array<Any>):EnumValue {
-		var funcParams = (params != null && params.length > 0) ? params : [];
+		final funcParams = (params != null && params.length > 0) ? params : [];
 		var enumValue:EnumValue;
 
 		enumValue = object.createByName(value, funcParams);

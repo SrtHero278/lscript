@@ -26,9 +26,11 @@ class LScript {
 	var toParse:String;
 
 	/**
-	 * The array containing the special vars so lua can utilize them by getting the location used in the `__special_id` field.
+	 * The map containing the special vars so lua can utilize them by getting the location used in the `__special_id` field.
 	 */
-	public var specialVars:Array<Dynamic> = [];
+	public var specialVars:Map<Int, Dynamic> = [-1 => null];
+	public var avalibableIndexes:Array<Int> = [];
+	public var nextIndex:Int = 1;
 	
 	public function new(scriptCode:String) {
 		luaState = LuaL.newstate();
@@ -37,11 +39,11 @@ class LScript {
 		Lua.register_hxtrace_lib(luaState);
 
 		Lua.newtable(luaState);
-		var tableIndex = Lua.gettop(luaState); //The variable position of the table. Used for paring the metatable with this table.
+		final tableIndex = Lua.gettop(luaState); //The variable position of the table. Used for paring the metatable with this table.
 		Lua.pushvalue(luaState, tableIndex);
 
 		LuaL.newmetatable(luaState, "__scriptMetatable");
-		var metatableIndex = Lua.gettop(luaState); //The variable position of the table. Used for setting the functions inside this metatable.
+		final metatableIndex = Lua.gettop(luaState); //The variable position of the table. Used for setting the functions inside this metatable.
 		Lua.pushvalue(luaState, metatableIndex);
 		Lua.setglobal(luaState, "__scriptMetatable");
 
@@ -57,10 +59,14 @@ class LScript {
 		Lua.pushcfunction(luaState, MetatableFunctions.callMetatableCall);
 		Lua.settable(luaState, metatableIndex);
 
+		Lua.pushstring(luaState, '__gc'); //This is a function in the metatable that is called when you call a function inside the table.
+		Lua.pushcfunction(luaState, MetatableFunctions.callGarbageCollect);
+		Lua.settable(luaState, metatableIndex);
+
 		Lua.setmetatable(luaState, tableIndex);
 
 		LuaL.newmetatable(luaState, "__enumMetatable");
-		var enumMetatableIndex = Lua.gettop(luaState); //The variable position of the table. Used for setting the functions inside this metatable.
+		final enumMetatableIndex = Lua.gettop(luaState); //The variable position of the table. Used for setting the functions inside this metatable.
 		Lua.pushvalue(luaState, metatableIndex);
 
 		Lua.pushstring(luaState, '__index'); //This is a function in the metatable that is called when you to get a var that doesn't exist.
@@ -70,7 +76,7 @@ class LScript {
 		specialVars[0] = {"import": ClassWorkarounds.importClass}
 
 		Lua.newtable(luaState);
-		var scriptTableIndex = Lua.gettop(luaState);
+		final scriptTableIndex = Lua.gettop(luaState);
 		Lua.pushvalue(luaState, scriptTableIndex);
 		Lua.setglobal(luaState, "script");
 
@@ -93,7 +99,7 @@ class LScript {
 	}
 
 	public function execute() {
-		var lastLua:LScript = currentLua;
+		final lastLua:LScript = currentLua;
 		currentLua = this;
 
 		if (LuaL.dostring(luaState, toParse) != 0)
@@ -114,7 +120,7 @@ class LScript {
 	public function getVar(name:String):Dynamic {
 		var toReturn:Dynamic = null;
 
-		var lastLua:LScript = currentLua;
+		final lastLua:LScript = currentLua;
 		currentLua = this;
 
 		Lua.getglobal(luaState, name);
@@ -127,7 +133,7 @@ class LScript {
 	}
 
 	public function setVar(name:String, newValue:Dynamic) {
-		var lastLua:LScript = currentLua;
+		final lastLua:LScript = currentLua;
 		currentLua = this;
 
 		CustomConvert.toLua(newValue);
@@ -137,7 +143,7 @@ class LScript {
 	}
 
 	public function callFunc(name:String, ?params:Array<Dynamic>):Dynamic {
-		var lastLua:LScript = currentLua;
+		final lastLua:LScript = currentLua;
 		currentLua = this;
 
 		Lua.settop(luaState, 0);
@@ -161,7 +167,7 @@ class LScript {
 		}
 
 		//Grabs and returns the result of the function.
-		var v = CustomConvert.fromLua(Lua.gettop(luaState));
+		final v = CustomConvert.fromLua(Lua.gettop(luaState));
 		Lua.settop(luaState, 0);
 		currentLua = lastLua;
 		return v;

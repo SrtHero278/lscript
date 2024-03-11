@@ -1,2 +1,3 @@
 --library linc_luajit
+--cpp bin
 # This allows me to code in vsc while not getting constant errors.

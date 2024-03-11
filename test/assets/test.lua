@@ -6,6 +6,8 @@ local spr
 local angleInc = 5
 
 function create()
+	print("hi! :D")
+
 	spr = FlxSprite:new()
 	spr:loadGraphic("assets/yes.png")
 	spr.scale:set(2, 2)
@@ -14,9 +16,9 @@ function create()
 	script.parent:add(spr)
 
 	local txt = FlxText:new(0, 0, 0, "This text was made with Lua!\nAlong with the sprite in the background.", 24)
-	txt:screenCenter()
+	txt.screenCenter()
 	txt.y = txt.y - 50
-	script.parent:add(txt)
+	script.parent.add(txt)
 
 	local function twnFinished() -- MAKE SURE EVERY FUNCTION AND VAR INSIDE FUNCTIONS ARE LOCAL. THIS IS TO WORKAROUND THE _G METATABLE.
 		txt.angle = txt.angle + angleInc;
