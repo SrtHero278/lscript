@@ -88,7 +88,7 @@ class LScript {
 		Lua.setmetatable(luaState, scriptTableIndex);
 
 		//Adding a suffix to the end of the lua file to attach a metatable to the global vars. (So you cant have to do `script.parent.this`)
-		toParse = scriptCode + '\nsetmetatable(_G, {
+		toParse = scriptCode + '\n\nsetmetatable(_G, {
 			__newindex = function (notUsed, name, value)
 				__scriptMetatable.__newindex(script.parent, name, value)
 			end,
@@ -142,7 +142,9 @@ class LScript {
 		currentLua = lastLua;
 	}
 
-	public function callFunc(name:String, ?params:Array<Dynamic>):Dynamic {
+	public function callFunc(name:String, ?param:Dynamic, ?param2:Dynamic, ?param3:Dynamic,
+		?param4:Dynamic, ?param5:Dynamic, ?param6:Dynamic, ?param7:Dynamic, ?param8:Dynamic,
+		?param9:Dynamic, ?param10:Dynamic):Dynamic {
 		final lastLua:LScript = currentLua;
 		currentLua = this;
 
@@ -153,12 +155,29 @@ class LScript {
 			return null;
 
 		//Pushes the parameters of the script.
-		var nparams:Int = 0;
-		if (params != null && params.length > 0) {
-			nparams = params.length;
-	   		for (val in params)
-				CustomConvert.toLua(val);
+		//To save a bunch of lines, I wrote an inline function that adds the function's parameter to the state
+
+		var nparams:cpp.UInt8 = 0;
+
+		inline function addParam(param:Dynamic)
+		{
+			if (param != null)
+			{
+				++nparams;
+				CustomConvert.toLua(param);
+			}
 		}
+
+		addParam(param);
+		addParam(param2);
+		addParam(param3);
+		addParam(param4);
+		addParam(param5);
+		addParam(param6);
+		addParam(param7);
+		addParam(param8);
+		addParam(param9);
+		addParam(param10);
 		
 		//Calls the function of the script. If it does not return 0, will trace what went wrong.
 		if (Lua.pcall(luaState, nparams, 1, 0) != 0) {
