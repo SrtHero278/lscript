@@ -161,11 +161,8 @@ class LScript {
 
 		inline function addParam(param:Dynamic)
 		{
-			if (param != null)
-			{
-				++nparams;
-				CustomConvert.toLua(param);
-			}
+			++nparams;
+			CustomConvert.toLua(param);
 		}
 
 		addParam(param);
