@@ -18,6 +18,6 @@ class TestState extends flixel.FlxState {
 
 	override public function update(elapsed:Float) {
 		super.update(elapsed);
-		script.callFunc("update", [elapsed]);
+		script.callFunc("update", elapsed);
 	}
 }
