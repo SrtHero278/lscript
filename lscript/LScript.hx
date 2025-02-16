@@ -112,8 +112,20 @@ class LScript {
 		trace("Lua code was unable to be parsed.\n" + err);
 	}
 
+	public dynamic function print(line:Int, s:String) {
+		Sys.println(tracePrefix + "(" + line + ") " + s);
+	}
+
 	static inline function scriptTrace(s:String):Int {
-		Sys.println(currentLua.tracePrefix + CustomConvert.fromLua(-2));
+		var info:Lua_Debug = {};
+		Lua.getstack(currentLua.luaState, 1, info);
+		Lua.getinfo(currentLua.luaState, "l", info);
+
+		var toTrace = "";
+		final numParams = Lua.gettop(currentLua.luaState);
+		for (i in 0...(numParams - 1))
+			toTrace += CustomConvert.fromLua(-numParams + i);
+		currentLua.print(info.currentline, toTrace);
 		return 0;
 	}
 

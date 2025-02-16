@@ -23,7 +23,6 @@ class ClassWorkarounds {
 		final funcParams = [for (i in 1...params.length) params[i]];
 		params.splice(1, params.length);
 		params.push(funcParams);
-		Sys.println(params);
 
 		//Calling the function.
 		var returned:Dynamic = null;

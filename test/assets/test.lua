@@ -7,6 +7,7 @@ local angleInc = 5
 
 function create()
 	print("hi! :D")
+	print("woah, ", "multi param.")
 
 	spr = FlxSprite:new()
 	spr:loadGraphic("assets/yes.png")
@@ -28,6 +29,7 @@ function create()
 		elseif txt.angle <= -30 then
 			angleInc = 5
 		end
+		print("Random Num: "..tostring(math.random(1, 5)))
 	end
 
 	FlxTween:tween(txt, {y = txt.y + 100}, 0.5, {ease = FlxEase.quadOut, type = 4, onComplete = twnFinished})
