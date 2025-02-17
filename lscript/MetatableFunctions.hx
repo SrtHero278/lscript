@@ -59,8 +59,9 @@ class MetatableFunctions {
 		final params:Array<Dynamic> = [for(i in 0...nparams) CustomConvert.fromLua(-nparams + i, RawPointer.addressOf(specialIndex), RawPointer.addressOf(parentIndex), i == 0)];
 
 		if (funcNum == 2) {
-			if (params[1] != LScript.currentLua.specialVars[parentIndex])
-				params.insert(1, LScript.currentLua.specialVars[parentIndex]);
+			final objParent = (parentIndex >= 0) ? LScript.currentLua.specialVars[parentIndex] : null;
+			if (params[1] != objParent)
+				params.insert(1, objParent);
 
 			final funcParams = [for (i in 2...params.length) params[i]];
 			params.splice(2, params.length);
@@ -111,7 +112,7 @@ class MetatableFunctions {
 	public static function metatableCall(func:Dynamic, object:Dynamic, ?params:Array<Any>) {
 		final funcParams = (params != null && params.length > 0) ? params : [];
 
-		if (object != null && func != null && Reflect.isFunction(func))
+		if (func != null && Reflect.isFunction(func))
 			return Reflect.callMethod(object, func, funcParams);
 		return null;
 	}

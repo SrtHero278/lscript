@@ -12,6 +12,9 @@ class TestState extends flixel.FlxState {
 		script.parent = this;
 		script.setVar("FlxG", flixel.FlxG);
 		script.setVar("FlxSprite", flixel.FlxSprite);
+		script.setVar("giveRandomNum", function(min:Int, max:Int) {
+			return flixel.FlxG.random.int(min, max);
+		});
 		script.execute();
 		script.callFunc("create");
 	}

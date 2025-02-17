@@ -29,7 +29,7 @@ function create()
 		elseif txt.angle <= -30 then
 			angleInc = 5
 		end
-		print("Random Num: "..tostring(math.random(1, 5)))
+		print("Random Num: "..tostring(giveRandomNum(1, 5)))
 	end
 
 	FlxTween:tween(txt, {y = txt.y + 100}, 0.5, {ease = FlxEase.quadOut, type = 4, onComplete = twnFinished})
