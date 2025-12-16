@@ -54,9 +54,9 @@ class MetatableFunctions {
 
 		//Making the params for the function.
 		final nparams:Int = Lua.gettop(state);
-		final specialIndex:Int = -1;
-		final parentIndex:Int = -1;
-		final params:Array<Dynamic> = [for(i in 0...nparams) CustomConvert.fromLua(-nparams + i, RawPointer.addressOf(specialIndex), RawPointer.addressOf(parentIndex), i == 0)];
+		final params:Array<Dynamic> = [for(i in 0...nparams) CustomConvert.fromLua(-nparams + i, i == 0)];
+		final specialIndex:Int = CustomConvert.curSpecial;
+		final parentIndex:Int = CustomConvert.curParent;
 
 		if (funcNum == 2) {
 			final objParent = (parentIndex >= 0) ? LScript.currentLua.specialVars[parentIndex] : null;
@@ -116,7 +116,7 @@ class MetatableFunctions {
 			return Reflect.callMethod(object, func, funcParams);
 		return null;
 	}
-	public static function garbageCollect(index:Int) {
+	public static function garbageCollect(index:Int) { // i actually dont think this works. i dont think the gc is even on.
 		LScript.currentLua.avalibableIndexes.push(index);
 		LScript.currentLua.specialVars.remove(index);
 	}

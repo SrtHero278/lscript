@@ -10,12 +10,15 @@ import llua.State;
 import llua.Macro.*;
 
 class CustomConvert {
+	public static var curSpecial:Int = -1;
+	public static var curParent:Int = -1;
+
 	/**
 	 * Converts a lua variable to haxe. Used for lua function returns.
 	 * @param stackPos The position of the lua variable.
 	 * @param inTable Default to false. This var is included because functions break in tables.
 	 */
-	 public static function fromLua(stackPos:Int, ?specialIndex:RawPointer<Int>, ?parentIndex:RawPointer<Int>, ?includeIndexes:Bool = false):Dynamic {
+	 public static function fromLua(stackPos:Int, ?includeIndexes:Bool = false):Dynamic {
 		var ret:Any = null;
 		final curLua = LScript.currentLua; // Mainly for the local function support but makes some lines shorter and nicer.
 		final luaState = curLua.luaState;
@@ -78,8 +81,8 @@ class CustomConvert {
 		if (ret is Dynamic && Reflect.hasField(ret, "__special_id")) {//Special Var.
 			final specID = Reflect.field(ret, "__special_id");
 			if (includeIndexes) {
-				specialIndex[0] = specID;
-				parentIndex[0] = Reflect.field(ret, "__parent_id");
+				curSpecial = specID;
+				curParent = Reflect.field(ret, "__parent_id");
 			}
 			return curLua.specialVars[specID];
 		}

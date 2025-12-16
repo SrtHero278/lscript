@@ -87,7 +87,7 @@ class LScript {
 		LuaL.getmetatable(luaState, "__scriptMetatable");
 		Lua.setmetatable(luaState, scriptTableIndex);
 
-		//Adding a suffix to the end of the lua file to attach a metatable to the global vars. (So you cant have to do `script.parent.this`)
+		//Adding a suffix to the end of the lua file to attach a metatable to the global vars. (So you dont have to do `script.parent.this`)
 		toParse = scriptCode + '\nsetmetatable(_G, {
 			__newindex = function (notUsed, name, value)
 				__scriptMetatable.__newindex(script.parent, name, value)
@@ -116,16 +116,16 @@ class LScript {
 		Sys.println(tracePrefix + "(" + line + ") " + s);
 	}
 
+	static var traceInfo:Lua_Debug = {};
 	static inline function scriptTrace(s:String):Int {
-		var info:Lua_Debug = {};
-		Lua.getstack(currentLua.luaState, 1, info);
-		Lua.getinfo(currentLua.luaState, "l", info);
+		Lua.getstack(currentLua.luaState, 1, traceInfo);
+		Lua.getinfo(currentLua.luaState, "l", traceInfo);
 
 		var toTrace = "";
 		final numParams = Lua.gettop(currentLua.luaState);
 		for (i in 0...(numParams - 1))
 			toTrace += CustomConvert.fromLua(-numParams + i);
-		currentLua.print(info.currentline, toTrace);
+		currentLua.print(traceInfo.currentline, toTrace);
 		return 0;
 	}
 

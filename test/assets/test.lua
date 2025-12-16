@@ -32,7 +32,7 @@ function create()
 		print("Random Num: "..tostring(giveRandomNum(1, 5)))
 	end
 
-	FlxTween:tween(txt, {y = txt.y + 100}, 0.5, {ease = FlxEase.quadOut, type = 4, onComplete = twnFinished})
+	FlxTween:tween(txt, {y = txt.y + 100}, 0.5, {ease = FlxEase.quadInOut, type = 4, onComplete = twnFinished})
 end
 
 function update(e)
