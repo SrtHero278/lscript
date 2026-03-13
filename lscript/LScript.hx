@@ -67,11 +67,23 @@ class LScript {
 
 		LuaL.newmetatable(luaState, "__enumMetatable");
 		final enumMetatableIndex = Lua.gettop(luaState); //The variable position of the table. Used for setting the functions inside this metatable.
-		Lua.pushvalue(luaState, metatableIndex);
+		Lua.pushvalue(luaState, metatableIndex); // i wonder if i can remove this since im not setting global....
 
 		Lua.pushstring(luaState, '__index'); //This is a function in the metatable that is called when you to get a var that doesn't exist.
 		Lua.pushcfunction(luaState, MetatableFunctions.callEnumIndex);
 		Lua.settable(luaState, enumMetatableIndex);
+
+		LuaL.newmetatable(luaState, "__globalMetatable");
+		final globalMetatableIndex = Lua.gettop(luaState); //The variable position of the table. Used for setting the functions inside this metatable.
+		Lua.pushvalue(luaState, metatableIndex);
+
+		Lua.pushstring(luaState, '__index'); //This is a function in the metatable that is called when you to get a var that doesn't exist in the script.
+		Lua.pushcfunction(luaState, MetatableFunctions.callGlobalIndex);
+		Lua.settable(luaState, globalMetatableIndex);
+
+		Lua.pushstring(luaState, '__newindex'); //This is a function in the metatable that is called when you to set a var that was originally null in the script.
+		Lua.pushcfunction(luaState, MetatableFunctions.callGlobalNewIndex);
+		Lua.settable(luaState, globalMetatableIndex);
 
 		specialVars[0] = {"import": ClassWorkarounds.importClass}
 
@@ -87,15 +99,24 @@ class LScript {
 		LuaL.getmetatable(luaState, "__scriptMetatable");
 		Lua.setmetatable(luaState, scriptTableIndex);
 
-		//Adding a suffix to the end of the lua file to attach a metatable to the global vars. (So you dont have to do `script.parent.this`)
-		toParse = scriptCode + '\nsetmetatable(_G, {
-			__newindex = function (notUsed, name, value)
-				__scriptMetatable.__newindex(script.parent, name, value)
-			end,
-			__index = function (notUsed, name)
-				return __scriptMetatable.__index(script.parent, name)
-			end
-		})';
+		toParse = scriptCode;
+	}
+
+	/**
+		Determines if the global variables will allow to attempt grabbing from the metatable, turning snippets like `script.parent.this` to just `that`!
+
+		NOTE: THIS IS ENABLED AFTER CALLING `execute`!
+	**/
+	public function allowGlobalMetatable(allowed:Bool) {
+		Lua.settop(luaState, 0);
+		Lua.getglobal(luaState, "_G"); // grab the table holding global variables, should be the first parameter.
+
+		if (allowed) // grab the metatable to set to.
+			LuaL.getmetatable(luaState, "__globalMetatable");
+		else 
+			Lua.pushnil(luaState);
+		Lua.setmetatable(luaState, -2);
+		Lua.settop(luaState, 0);
 	}
 
 	public function execute() {
@@ -104,6 +125,7 @@ class LScript {
 
 		if (LuaL.dostring(luaState, toParse) != 0)
 			parseError(Lua.tostring(luaState, -1));
+		allowGlobalMetatable(true);
 
 		currentLua = lastLua;
 	}

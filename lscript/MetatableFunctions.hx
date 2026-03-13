@@ -32,6 +32,15 @@ class MetatableFunctions {
 	 */
 	public static final callEnumIndex = Callable.fromStaticFunction(_callEnumIndex);
 
+	/**
+	 * The metatable function that is called when lua tries to get an unknown variable from itself.
+	 */
+	public static final callGlobalIndex = Callable.fromStaticFunction(_callGlobalIndex);
+	/**
+	 * The metatable function that is called when lua tries to set an unknown variable from itself.
+	 */
+	public static final callGlobalNewIndex = Callable.fromStaticFunction(_callGlobalNewIndex);
+
 	//These functions are here because Callable seems like it wants an int return and whines when you do a non static function.
 	static function _callIndex(state:StatePointer):Int {
 		return metatableFunc(LScript.currentLua.luaState, 0);
@@ -47,6 +56,29 @@ class MetatableFunctions {
 	}
 	static function _callEnumIndex(state:StatePointer):Int {
 		return metatableFunc(LScript.currentLua.luaState, 4);
+	}
+
+	static function _callGlobalIndex(state:StatePointer):Int {
+		final state = LScript.currentLua.luaState;
+		final nparams = Lua.gettop(state);
+		Lua.remove(state, -nparams);
+		Lua.getglobal(state, "script");
+		Lua.getfield(state, -1, "parent");
+		Lua.remove(state, -2);
+		Lua.insert(state, -nparams);
+
+		return metatableFunc(state, 0);
+	}
+	static function _callGlobalNewIndex(state:StatePointer):Int {
+		final state = LScript.currentLua.luaState;
+		final nparams = Lua.gettop(state);
+		Lua.remove(state, -nparams);
+		Lua.getglobal(state, "script");
+		Lua.getfield(state, -1, "parent");
+		Lua.remove(state, -2);
+		Lua.insert(state, -nparams);
+
+		return metatableFunc(state, 1);
 	}
 
 	static function metatableFunc(state:State, funcNum:Int) {

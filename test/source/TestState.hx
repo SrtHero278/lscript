@@ -16,6 +16,7 @@ class TestState extends flixel.FlxState {
 			return flixel.FlxG.random.int(min, max);
 		});
 		script.execute();
+		// script.allowGlobalMetatable(false);
 		script.callFunc("create");
 	}
 
