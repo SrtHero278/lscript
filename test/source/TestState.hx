@@ -16,8 +16,10 @@ class TestState extends flixel.FlxState {
 			return flixel.FlxG.random.int(min, max);
 		});
 		script.execute();
+		script.setVar("greeting", "hi! :D");
 		// script.allowGlobalMetatable(false);
 		script.callFunc("create");
+		trace(script.getVar("angleInc"));
 	}
 
 	override public function update(elapsed:Float) {

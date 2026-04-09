@@ -157,7 +157,8 @@ class LScript {
 		final lastLua:LScript = currentLua;
 		currentLua = this;
 
-		Lua.getglobal(luaState, name);
+		Lua.pushstring(luaState, name);
+		Lua.rawget(luaState, Lua.LUA_GLOBALSINDEX);
 		toReturn = CustomConvert.fromLua(-1);
 		Lua.pop(luaState, 1);
 
@@ -170,8 +171,9 @@ class LScript {
 		final lastLua:LScript = currentLua;
 		currentLua = this;
 
+		Lua.pushstring(luaState, name);
 		CustomConvert.toLua(newValue);
-		Lua.setglobal(luaState, name);
+		Lua.rawset(luaState, Lua.LUA_GLOBALSINDEX);
 		
 		currentLua = lastLua;
 	}
@@ -181,7 +183,8 @@ class LScript {
 		currentLua = this;
 
 		Lua.settop(luaState, 0);
-		Lua.getglobal(luaState, name); //Finds the function from the script.
+		Lua.pushstring(luaState, name);
+		Lua.rawget(luaState, Lua.LUA_GLOBALSINDEX); // Finds the function from the script.
 
 		if (!Lua.isfunction(luaState, -1))
 			return null;

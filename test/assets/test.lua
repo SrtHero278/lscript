@@ -3,10 +3,10 @@ script:import("flixel.tweens.FlxTween")
 script:import("flixel.tweens.FlxEase")
 
 local spr
-local angleInc = 5
+angleInc = 5
 
 function create()
-	print("hi! :D")
+	print(greeting)
 	print("woah, ", "multi param.")
 
 	spr = FlxSprite:new()
