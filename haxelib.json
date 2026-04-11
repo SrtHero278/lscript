@@ -8,5 +8,7 @@
 	"classPath": "",
 	"releasenote": "",
 	"contributors": ["SrtHero278"],
-	"dependencies": {}
+	"dependencies": {
+		"linc_luajit": ""
+	}
 }
