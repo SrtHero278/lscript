@@ -33,7 +33,6 @@
 
 	<haxelib name="flixel" />
 
-	<haxelib name="linc_luajit" />
 	<haxelib name="lscript" />
 
 	<!-- ______________________________ Haxedefines _____________________________ -->

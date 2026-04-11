@@ -9,6 +9,6 @@
 	"releasenote": "",
 	"contributors": ["SrtHero278"],
 	"dependencies": {
-		"linc_luajit": ""
+		"linc_luajit": "git:https://github.com/nebulazorua/linc_luajit"
 	}
 }
